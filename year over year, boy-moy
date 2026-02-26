@@ -1,0 +1,16 @@
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.star_growth_cohort_yoy_boy_moy` AS
+SELECT
+  subject,
+  cohort,
+  school_year_label,
+
+  COUNTIF(growth_boy_moy_scaled IS NOT NULL) AS n_students,
+  AVG(growth_boy_moy_scaled) AS avg_growth_boy_moy_scaled,
+  STDDEV_SAMP(growth_boy_moy_scaled) AS sd_growth_boy_moy_scaled,
+  APPROX_QUANTILES(growth_boy_moy_scaled, 100)[OFFSET(50)] AS median_growth_boy_moy_scaled,
+
+  AVG(growth_boy_moy_pr) AS avg_growth_boy_moy_pr
+FROM `topminnow.Pecos_Cyber_Academy.star_growth_student_level`
+WHERE school_year_label IN ('2024-25', '2025-26')
+  AND cohort IS NOT NULL
+GROUP BY subject, cohort, school_year_label;
