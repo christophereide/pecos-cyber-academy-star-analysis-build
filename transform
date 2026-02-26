@@ -1,0 +1,77 @@
+-- BigQuery Standard SQL
+-- STAR staging transform from STRING-based external table
+
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.star_transformed` AS
+SELECT
+  CURRENT_TIMESTAMP() AS load_timestamp,
+  _FILE_NAME AS source_file,
+
+  'STAR' AS assessment,
+
+  SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) AS school_year_start,
+  CONCAT(
+    CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) AS STRING),
+    '-',
+    RIGHT(CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) + 1 AS STRING), 2)
+  ) AS school_year_label,
+
+  UPPER(TRIM(Term_Tested)) AS testing_window_raw,
+  CASE
+    WHEN UPPER(TRIM(Term_Tested)) IN ('BOY', 'BEGINNING OF YEAR') THEN 'BOY'
+    WHEN UPPER(TRIM(Term_Tested)) IN ('MOY', 'MIDDLE OF YEAR', 'MIDYEAR') THEN 'MOY'
+    WHEN UPPER(TRIM(Term_Tested)) IN ('EOY', 'END OF YEAR') THEN 'EOY'
+    ELSE UPPER(TRIM(Term_Tested))
+  END AS testing_window,
+
+  UPPER(TRIM(Subject_Tested)) AS subject_raw,
+  CASE
+    WHEN UPPER(TRIM(Subject_Tested)) IN ('READING', 'ELA') THEN 'Reading'
+    WHEN UPPER(TRIM(Subject_Tested)) IN ('MATH', 'MATHEMATICS') THEN 'Math'
+    ELSE INITCAP(TRIM(Subject_Tested))
+  END AS subject,
+
+  TRIM(School) AS school_name,
+  TRIM(Class_Group) AS class_group,
+  TRIM(Last_Name) AS last_name,
+  TRIM(First_Name) AS first_name,
+  CONCAT(
+    COALESCE(TRIM(First_Name), ''),
+    CASE
+      WHEN NULLIF(TRIM(First_Name), '') IS NOT NULL
+       AND NULLIF(TRIM(Last_Name), '') IS NOT NULL THEN ' '
+      ELSE ''
+    END,
+    COALESCE(TRIM(Last_Name), '')
+  ) AS student_name,
+
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(Student_ID, ''), r'[^0-9]', '') AS INT64) AS student_id,
+
+  TRIM(Grade) AS grade_level_raw,
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(Grade, ''), r'[^0-9]', '') AS INT64) AS grade_level,
+
+  COALESCE(
+    SAFE.PARSE_DATE('%Y-%m-%d', TRIM(Test_Date)),
+    SAFE.PARSE_DATE('%m/%d/%Y', TRIM(Test_Date)),
+    SAFE.PARSE_DATE('%m/%e/%Y', TRIM(Test_Date))
+  ) AS test_date,
+
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(SS__Star_Unified_, ''), r'[^0-9\\-]', '') AS INT64) AS scaled_score,
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(PR, ''), r'[^0-9\\-]', '') AS INT64) AS percentile_rank,
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(GE, ''), r'[^0-9.\\-]', '') AS FLOAT64) AS grade_equivalent,
+  TRIM(Benchmark_Type) AS benchmark_type,
+  TRIM(Benchmark_Category) AS benchmark_category,
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(Cohort, ''), r'[^0-9\\-]', '') AS INT64) AS cohort,
+
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(SS__Star_Unified_, ''), r'[^0-9.\\-]', '') AS FLOAT64) AS primary_score,
+  SAFE_CAST(REGEXP_REPLACE(COALESCE(PR, ''), r'[^0-9.\\-]', '') AS FLOAT64) AS percentile,
+
+  TO_HEX(MD5(CONCAT(
+    COALESCE(TRIM(School_Year), ''), '|',
+    COALESCE(TRIM(Term_Tested), ''), '|',
+    COALESCE(TRIM(Subject_Tested), ''), '|',
+    COALESCE(REGEXP_REPLACE(COALESCE(Student_ID, ''), r'[^0-9]', ''), ''), '|',
+    COALESCE(TRIM(Test_Date), '')
+  ))) AS row_hash
+
+FROM `topminnow.Pecos_Cyber_Academy.star-first-lake-table`
+WHERE SAFE_CAST(REGEXP_REPLACE(COALESCE(Student_ID, ''), r'[^0-9]', '') AS INT64) IS NOT NULL;
