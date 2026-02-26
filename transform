@@ -8,12 +8,13 @@ SELECT
 
   'STAR' AS assessment,
 
-  SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) AS school_year_start,
-  CONCAT(
-    CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) AS STRING),
-    '-',
-    RIGHT(CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) + 1 AS STRING), 2)
-  ) AS school_year_label,
+  SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) - 1 AS school_year_start,
+CONCAT(
+  CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) - 1 AS STRING),
+  '-',
+  RIGHT(CAST(SAFE_CAST(NULLIF(TRIM(School_Year), '') AS INT64) AS STRING), 2)
+) AS school_year_label,
+
 
   UPPER(TRIM(Term_Tested)) AS testing_window_raw,
   CASE
@@ -75,3 +76,4 @@ SELECT
 
 FROM `topminnow.Pecos_Cyber_Academy.star-first-lake-table`
 WHERE SAFE_CAST(REGEXP_REPLACE(COALESCE(Student_ID, ''), r'[^0-9]', '') AS INT64) IS NOT NULL;
+, ''), r'[^0-9]', '') AS INT64) IS NOT NULL;
