@@ -1,0 +1,40 @@
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.star_growth_student_level` AS
+WITH pivoted AS (
+  SELECT
+    school_year_start,
+    school_year_label,
+    subject,
+    student_id,
+    ANY_VALUE(student_name) AS student_name,
+    ANY_VALUE(last_name) AS last_name,
+    ANY_VALUE(first_name) AS first_name,
+    ANY_VALUE(grade_level) AS grade_level,
+    ANY_VALUE(grade_level_raw) AS grade_level_raw,
+    ANY_VALUE(cohort) AS cohort,
+    ANY_VALUE(school_name) AS school_name,
+    ANY_VALUE(class_group) AS class_group,
+
+    MAX(IF(testing_window = 'BOY', scaled_score, NULL)) AS boy_scaled_score,
+    MAX(IF(testing_window = 'MOY', scaled_score, NULL)) AS moy_scaled_score,
+    MAX(IF(testing_window = 'EOY', scaled_score, NULL)) AS eoy_scaled_score,
+
+    MAX(IF(testing_window = 'BOY', percentile_rank, NULL)) AS boy_percentile_rank,
+    MAX(IF(testing_window = 'MOY', percentile_rank, NULL)) AS moy_percentile_rank,
+    MAX(IF(testing_window = 'EOY', percentile_rank, NULL)) AS eoy_percentile_rank,
+
+    MAX(IF(testing_window = 'BOY', test_date, NULL)) AS boy_test_date,
+    MAX(IF(testing_window = 'MOY', test_date, NULL)) AS moy_test_date,
+    MAX(IF(testing_window = 'EOY', test_date, NULL)) AS eoy_test_date
+  FROM `topminnow.Pecos_Cyber_Academy.star_analysis_base`
+  GROUP BY school_year_start, school_year_label, subject, student_id
+)
+SELECT
+  *,
+  SAFE_CAST(moy_scaled_score - boy_scaled_score AS FLOAT64) AS growth_boy_moy_scaled,
+  SAFE_CAST(eoy_scaled_score - boy_scaled_score AS FLOAT64) AS growth_boy_eoy_scaled,
+  SAFE_CAST(eoy_scaled_score - moy_scaled_score AS FLOAT64) AS growth_moy_eoy_scaled,
+
+  SAFE_CAST(moy_percentile_rank - boy_percentile_rank AS FLOAT64) AS growth_boy_moy_pr,
+  SAFE_CAST(eoy_percentile_rank - boy_percentile_rank AS FLOAT64) AS growth_boy_eoy_pr,
+  SAFE_CAST(eoy_percentile_rank - moy_percentile_rank AS FLOAT64) AS growth_moy_eoy_pr
+FROM pivoted;
