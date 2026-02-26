@@ -1,0 +1,33 @@
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.star_growth_cohort_yoy_boy_moy_wide` AS
+WITH src AS (
+  SELECT
+    subject,
+    cohort,
+    school_year_label,
+    COUNTIF(growth_boy_moy_scaled IS NOT NULL) AS n_students,
+    AVG(growth_boy_moy_scaled) AS avg_growth_boy_moy_scaled,
+    APPROX_QUANTILES(growth_boy_moy_scaled, 100)[OFFSET(50)] AS median_growth_boy_moy_scaled
+  FROM `topminnow.Pecos_Cyber_Academy.star_growth_student_level`
+  WHERE school_year_label IN ('2024-25', '2025-26')
+    AND cohort IS NOT NULL
+  GROUP BY subject, cohort, school_year_label
+)
+SELECT
+  subject,
+  cohort,
+
+  MAX(IF(school_year_label = '2024-25', n_students, NULL)) AS n_2024_25,
+  MAX(IF(school_year_label = '2024-25', avg_growth_boy_moy_scaled, NULL)) AS avg_growth_boy_moy_scaled_2024_25,
+  MAX(IF(school_year_label = '2024-25', median_growth_boy_moy_scaled, NULL)) AS median_growth_boy_moy_scaled_2024_25,
+
+  MAX(IF(school_year_label = '2025-26', n_students, NULL)) AS n_2025_26,
+  MAX(IF(school_year_label = '2025-26', avg_growth_boy_moy_scaled, NULL)) AS avg_growth_boy_moy_scaled_2025_26,
+  MAX(IF(school_year_label = '2025-26', median_growth_boy_moy_scaled, NULL)) AS median_growth_boy_moy_scaled_2025_26,
+
+  SAFE_CAST(
+    MAX(IF(school_year_label = '2025-26', avg_growth_boy_moy_scaled, NULL))
+    - MAX(IF(school_year_label = '2024-25', avg_growth_boy_moy_scaled, NULL))
+    AS FLOAT64
+  ) AS delta_avg_growth_boy_moy_scaled
+FROM src
+GROUP BY subject, cohort;
