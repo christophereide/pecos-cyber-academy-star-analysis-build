@@ -1,0 +1,17 @@
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.star_analysis_base` AS
+WITH ranked AS (
+  SELECT
+    s.*,
+    ROW_NUMBER() OVER (
+      PARTITION BY s.school_year_label, s.subject, s.student_id, s.testing_window
+      ORDER BY s.test_date DESC NULLS LAST, s.load_timestamp DESC
+    ) AS rn
+  FROM `topminnow.Pecos_Cyber_Academy.star_transformed` s
+  WHERE s.student_id IS NOT NULL
+    AND s.subject IN ('Math', 'Reading')
+    AND s.testing_window IN ('BOY', 'MOY', 'EOY')
+    AND s.scaled_score IS NOT NULL
+)
+SELECT * EXCEPT(rn)
+FROM ranked
+WHERE rn = 1;
