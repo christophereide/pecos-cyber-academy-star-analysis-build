@@ -1,0 +1,57 @@
+-- 3) COMBINED ASSESSMENT MART (STAR + AMIRA)
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.assessment_longitudinal_gold` AS
+SELECT
+  assessment,
+  school_year_label,
+  school_year_start,
+  testing_window,
+  testing_window_raw,
+  subject,
+  subject_raw,
+  student_id,
+  first_name,
+  last_name,
+  student_name,
+  grade_level,
+  grade_level_raw,
+  test_date,
+  school_name,
+  class_group,
+  cohort,
+  primary_score,
+  percentile,
+  scaled_score,
+  percentile_rank,
+  grade_equivalent,
+  source_file,
+  load_timestamp
+FROM `topminnow.Pecos_Cyber_Academy.star_transformed`
+
+UNION ALL
+
+SELECT
+  assessment,
+  school_year_label,
+  school_year_start,
+  testing_window,
+  testing_window_raw,
+  subject,
+  subject_raw,
+  student_id,
+  first_name,
+  last_name,
+  student_name,
+  grade_level,
+  grade_level_raw,
+  test_date,
+  school_name,
+  class_group,
+  cohort,
+  primary_score,
+  percentile,
+  scaled_score,
+  percentile_rank,
+  grade_equivalent,
+  source_file,
+  load_timestamp
+FROM `topminnow.Pecos_Cyber_Academy.amira_transformed`;
