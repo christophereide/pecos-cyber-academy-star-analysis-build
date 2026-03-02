@@ -1,0 +1,17 @@
+CREATE OR REPLACE TABLE `topminnow.Pecos_Cyber_Academy.assessment_longitudinal_gold_sis` AS
+SELECT
+  a.*,
+  s.gender,
+  s.ethnicity_group,
+  s.race_ethnicity_group,
+  s.lunch_status_group,
+  s.sped_status,
+  s.ell_status,
+  s.gifted_status,
+  s.homeless_status,
+  s.grade_level AS sis_grade_level,
+  s.class_of,
+  s.load_timestamp AS sis_load_timestamp
+FROM `topminnow.Pecos_Cyber_Academy.assessment_longitudinal_gold` a
+LEFT JOIN `topminnow.Pecos_Cyber_Academy.sis_transformed` s
+  ON s.state_student_id = a.student_id;
